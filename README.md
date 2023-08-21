@@ -1,28 +1,15 @@
-# URL of Our Own
-URL of Our Own 是面对 [archiveofourown.org ](https://archiveofourown.org)（下称 AO3）网站 的一个提供反向代理配置的项目。
+# New URL of Our Own
+New URL of Our Own 是面对 [archiveofourown.org ](https://archiveofourown.org)（下称 AO3）网站 的一个提供反向代理配置的项目。
 
 该项目旨在帮助各位内容创作者自由地进行创作，保障在特殊网络情形下对 AO3 网站的正常访问.
 
-## 如何使用?
+本项目修改自原作者 [@ExcitedCodes](https://github.com/ExcitedCodes) 的项目[URLOfOurOwn](https://github.com/ExcitedCodes/URLOfOurOwn)
 
-演示站点：~[https://ao3.wtf](https://ao3.wtf)~ _(我们采用了全新的边缘计算代理模式, 此项目仍会继续维护但我们不再提供演示站点.)_
+原作者于2020年公开，随后停止维护，Nginx配置文件已经无法用于现状
 
-### 备用站点
+本人修改了原作者的代码，使之可用，
 
-直接访问 [urls.jsonc](https://github.com/ExcitedCodes/URLOfOurOwn/blob/master/urls.jsonc) 中打开 "available" 一节下的任意域名即可（有待后续添加更多）。
-
-例如如下内容，直接访问 [ao3.wtf](https://ao3.wtf) 即可。
-
-```jsonc
-{
-	"available": [
-		"ao3.wtf"
-	],
-	"blocked": []
-}
-```
-
-## 如何搭建?
+## 搭建教程
 
 1. 首先，你需要准备一个在目标地区可以正常解析域名和一个能访问到 AO3 的服务器（即位于海外），并且拥有 `root` 访问权限；
 
@@ -36,28 +23,42 @@ URL of Our Own 是面对 [archiveofourown.org ](https://archiveofourown.org)（�
       * Ubuntu: `sudo apt update && apt install -y git vim`
       * CentOS: `sudo yum update && yum install -y git vim`
 
-3. 使用 `git clone` 命令复制所需的文件：在任意路径执行 `git clone https://github.com/ExcitedCodes/URLOfOurOwn.git`
+3. 使用 `git clone` 命令复制所需的文件：在任意路径执行 `git clone https://github.com/PHalfStudio/NewURLOfOurOwn.git`
 
-4. 准备 Nginx 配置文件：在当前执行 `cp URLOfOurOwn/proxy/nginx/* /etc/nginx/conf.d`
+4. 准备 Nginx 配置文件：在当前执行 `cp NewURLOfOurOwn/proxy/nginx/* /etc/nginx/conf.d`
 
-5. 准备一个放置代理文件的路径，可以直接在同一目录执行 `cp -r URLOfOurOwn/proxy/ao3 /var/www/html/ao3`；若安装方式不同，`Nginx` 的安装目录也可能会不同；若 `Nginx` 是用其他方式安装，你可以使用 `whereis nginx` 命令快速查找 `Nginx` 的位置
+5. 准备一个放置代理文件的路径，可以直接在同一目录执行 `cp -r NewURLOfOurOwn/proxy/ao3 /var/www/html/ao3`；
 
-6. 修改配置文件使其符合你的域名，请全程使用**英文输入方式**，并注意不要误删任何无关的字符；执行 `vim /etc/nginx/conf.d/site.conf`（也可以使用任何其他你喜爱的编辑器），下文介绍 `vim` 的使用方法：
+6. 若安装方式不同，`Nginx` 的安装目录也可能会不同；若 `Nginx` 是用其他方式安装，你可以使用 `whereis nginx` 命令快速查找 `Nginx` 的位置
+
+7. 修改配置文件使其符合你的域名，请全程使用**英文输入方式**，并注意不要误删任何无关的字符；执行 `vim /etc/nginx/conf.d/site.conf`（也可以使用任何其他你喜爱的编辑器），下文介绍 `vim` 的使用方法：
    * 按一下 i 进入编辑模式，你应该会注意到左下角出现 `-- INSERT --` 字样
-   * 在第3行左右找到 `server_name <Fill_Domain>;` 并将其替换为你的域名，如 `server_name  ao3.wtf;`
-   * 在第18行左右找到 `root <Fill_AO3>;` 并将其替换为第5步中的路径. 如果你直接执行了那行路径，请输入 `/var/www/html/ao3`
+
+   * 在第3行和第10行左右找到 `server_name <Fill_Domain>;` 并将其替换为你的域名，如 `server_name  ao3.wtf;`
+
+   * 在第19行和20行找到`<Pem_Path>`和`<key_Path>`关键字，删除后面的{}，并填入自己域名的SSL证书
+
+     （如没有申请，请参阅下方申请SSL证书环节）
+
+   * 在第27行左右找到 `root <Fill_AO3>;` 并将其替换为第5步中的路径. 如果你直接执行了那行路径，请输入 `/var/www/html/ao3`
+
    * 我们不提供配置缓存的教程也不建议您配置缓存, 因为这可能引发一系列安全问题
-   * 如果你 __不__ 使用 Cloudflare:
+
+   * 如果你 __不__ 使用 Cloudflare
+
+     （**注意：本修改版仅测试了使用Cloudflare CDN代理后的情况，如操作后网页加载失败，请自行解决**）
+
      * 找到 `$http_cf_connecting_ip` 并替换为 `$remote_addr`
      * 找到文件末尾的 `include conf.d/cloudflare.inc;` 和 `deny all;` 两行并在最前面加上 `#`
+
    * 配置完毕后按下 ESC 按键并输入 `:wq`，按回车退出 vim
 
-7. 接下来，启动（或重启）你的 Nginx，执行 `systemctl restart nginx` 或者 `service nginx restart`
+8. 接下来，启动（或重启）你的 Nginx，执行 `systemctl restart nginx` 或者 `service nginx restart`
    * 如果你希望 Nginx 在未来自动启动，请执行 `systemctl enable nginx`
 
-8. 解析域名到你的服务器 IP；可以使用 `curl ipv4.ip.sb` 命令快速查询服务器 IP
+9. 解析域名到你的服务器 IP；可以使用 `curl ipv4.ip.sb` 命令快速查询服务器 IP
 
-9. 现在，你的代理网站应该可以工作了。~尝试在浏览器中访问它，如果它工作并且你愿意与我们共享这一域名，我们建议你到[这里](https://github.com/ExcitedCodes/URLOfOurOwn/issues)提交你的域名作为备用站点的一部分。~ 详细参见 [#6](https://github.com/ExcitedCodes/URLOfOurOwn/issues/6#issuecomment-646024478)
+10. 现在，你的代理网站应该可以工作了。~尝试在浏览器中访问它！
 
 ### 安装 Nginx
 
@@ -80,3 +81,95 @@ URL of Our Own 是面对 [archiveofourown.org ](https://archiveofourown.org)（�
      $ sudo firewall-cmd --permanent --zone=public --add-service=http
      $ sudo firewall-cmd --reload
      ```
+
+### 便捷申请SSL证书
+
+项目前身 [@ExcitedCodes](https://github.com/ExcitedCodes/URLOfOurOwn) 的Nginx配置文件已经失效，经过本人修改后发现缺失了部分代码以及需要HTTPS链接
+
+暂时只提供Linux下申请SSL证书的申请教程
+
+大体分两步，首先安装Snapd，再安装SSL证书申请工具
+
+#### CentOS 7:
+
+- 安装Snapd
+
+  - [详细教程【英文】](https://snapcraft.io/docs/installing-snap-on-centos)
+
+  - 简化版本：
+
+    ```
+    $ sudo yum install snapd
+    $ sudo systemctl enable --now snapd.socket
+    $ sudo ln -s /var/lib/snapd/snap /snap
+    ```
+
+- 安装CertBot并申请SSL证书
+
+  - [详细教程【英文】](https://certbot.eff.org/instructions?ws=nginx&os=centosrhel7)
+
+  - 简化版本
+
+    ```
+    $ sudo snap install --classic certbot
+    $ sudo ln -s /snap/bin/certbot /usr/bin/certbot
+    # 自动安装
+    $ sudo certbot --nginx
+    
+    #只是想申请证书
+    $ sudo certbot certonly --nginx
+    ```
+
+    输入安装命令后请根据命令行提示自行申请SSL证书
+
+    如果选择自动安装后你应该会在`/etc/nginx/conf.d/site.conf`文件中看到这样的字样
+
+    ```
+    ssl_certificate /etc/letsencrypt/live/xxx.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/xxx.com/privkey.pem; # managed by Certbot
+    ```
+
+​				
+
+#### Ubuntu 20：
+
+- 安装Snapd（如原系统中并没有安装，一般来说Ubuntu会自带Snapd）
+
+  - [详细教程【英文】](https://snapcraft.io/docs/installing-snap-on-ubuntu))
+
+  - 简化版本：
+
+    ```
+    $ sudo apt update
+    $ sudo apt install snapd
+    # 重新启动系统
+    $ reboot
+    
+    ```
+
+- 安装CertBot并申请SSL证书
+
+  - [详细教程【英文】](https://certbot.eff.org/instructions?ws=nginx&os=ubuntufocal)
+
+  - 简化版本
+
+    ```
+    $ sudo snap install --classic certbot
+    $ sudo ln -s /snap/bin/certbot /usr/bin/certbot
+    # 自动安装
+    $ sudo certbot --nginx
+    
+    #只是想申请证书
+    $ sudo certbot certonly --nginx
+    ```
+
+    输入安装命令后请根据命令行提示自行申请SSL证书
+
+    如果选择自动安装后你应该会在`/etc/nginx/conf.d/site.conf`文件中看到这样的字样
+
+    ```
+    ssl_certificate /etc/letsencrypt/live/xxx.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/xxx.com/privkey.pem; # managed by Certbot
+    ```
+
+​				
